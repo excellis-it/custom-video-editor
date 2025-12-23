@@ -4,6 +4,7 @@
 
 class VideoEditor {
   constructor() {
+    console.log("VideoEditor Instance Created - Version 1.2");
     // DOM Elements
     this.thumbnailOverlay = document.getElementById("thumbnailOverlay");
     this.playPauseBtn = document.getElementById("playPauseBtn");
@@ -79,15 +80,7 @@ class VideoEditor {
 
   initYoutubePlayer() {
     return new Promise((resolve) => {
-      // Load YT API if not loaded
-      if (!window.YT) {
-        const tag = document.createElement('script');
-        tag.src = "https://www.youtube.com/iframe_api";
-        const firstScriptTag = document.getElementsByTagName('script')[0];
-        firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
-      }
-
-      window.onYouTubeIframeAPIReady = () => {
+      const setupPlayer = () => {
         const ytPlayer = new YT.Player('youtubePlayer', {
           events: {
             'onReady': (event) => {
@@ -116,10 +109,31 @@ class VideoEditor {
         });
       };
 
-      // If API already loaded but ready not called
       if (window.YT && window.YT.Player) {
-        window.onYouTubeIframeAPIReady();
+        setupPlayer();
+      } else {
+        const oldOnReady = window.onYouTubeIframeAPIReady;
+        window.onYouTubeIframeAPIReady = () => {
+          if (oldOnReady) oldOnReady();
+          setupPlayer();
+        };
+
+        if (!document.querySelector('script[src*="youtube.com/iframe_api"]')) {
+          const tag = document.createElement('script');
+          tag.src = "https://www.youtube.com/iframe_api";
+          const firstScriptTag = document.getElementsByTagName('script')[0];
+          firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+        }
       }
+
+      // Safeguard: resolve anyway after 5s if YT fails to load
+      setTimeout(() => {
+          if (!this.player) {
+              console.warn("YouTube API timeout - using mock player");
+              this.player = { play:()=>{}, pause:()=>{}, getCurrentTime:()=>0, getDuration:()=>0, setCurrentTime:()=>{}, setVolume:()=>{}, getVolume:()=>100, setMuted:()=>{}, isMuted:()=>false, setPlaybackRate:()=>{}, isPaused:()=>true, getElement:()=>null, isReady:()=>false };
+              resolve();
+          }
+      }, 5000);
     });
   }
 
@@ -203,6 +217,7 @@ class VideoEditor {
   }
 
   togglePlayPause() {
+    if (!this.player) return;
     if (this.player.isPaused()) {
       this.player.play();
       if (this.thumbnailShown) {
@@ -228,6 +243,7 @@ class VideoEditor {
   }
 
   skip(seconds) {
+    if (!this.player) return;
     const newTime = this.player.getCurrentTime() + seconds;
     this.player.setCurrentTime(Math.max(0, Math.min(this.player.getDuration(), newTime)));
     this.showSkipFeedback(seconds);
@@ -243,6 +259,7 @@ class VideoEditor {
   }
 
   toggleMute() {
+    if (!this.player) return;
     const muted = !this.player.isMuted();
     this.player.setMuted(muted);
     this.updateMuteButton(muted);
@@ -263,13 +280,14 @@ class VideoEditor {
   }
 
   seek(e) {
+    if (!this.player) return;
     const rect = this.progressBar.getBoundingClientRect();
     const percentage = (e.clientX - rect.left) / rect.width;
     this.player.setCurrentTime(percentage * this.player.getDuration());
   }
 
   handleProgressDrag(e) {
-    if (!this.isDragging) return;
+    if (!this.isDragging || !this.player) return;
     const rect = this.progressBar.getBoundingClientRect();
     let percentage = (e.clientX - rect.left) / rect.width;
     percentage = Math.max(0, Math.min(1, percentage));
@@ -307,5 +325,6 @@ class VideoEditor {
 }
 
 document.addEventListener("DOMContentLoaded", () => {
+  console.log("DOM Content Loaded - Initializing VideoEditor v1.2");
   new VideoEditor();
 });

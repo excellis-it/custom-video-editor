@@ -212,7 +212,7 @@
         </main>
     </div>
 
-    <script src="{{ asset('js/script.js') }}"></script>
+    <script src="{{ asset('js/v12-script.js') }}"></script>
 </body>
 
 </html>
