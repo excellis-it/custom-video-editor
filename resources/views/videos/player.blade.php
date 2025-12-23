@@ -212,27 +212,6 @@
         </main>
     </div>
 
-    <script>
-        // Handle YouTube video thumbnail click
-        const isYoutube = document.getElementById('videoContainer').dataset.isYoutube === 'true';
-        const thumbnailOverlay = document.getElementById('thumbnailOverlay');
-
-        if (isYoutube) {
-            const youtubePlayer = document.getElementById('youtubePlayer');
-
-            thumbnailOverlay.addEventListener('click', function() {
-                // Hide thumbnail
-                thumbnailOverlay.style.display = 'none';
-                // Show YouTube iframe
-                youtubePlayer.style.display = 'block';
-                // Add autoplay to the iframe src
-                const currentSrc = youtubePlayer.src;
-                if (!currentSrc.includes('autoplay=1')) {
-                    youtubePlayer.src = currentSrc + '&autoplay=1';
-                }
-            });
-        }
-    </script>
     <script src="{{ asset('js/script.js') }}"></script>
 </body>
 
