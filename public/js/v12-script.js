@@ -29,7 +29,6 @@ class VideoEditor {
     this.resolutionDisplay = document.getElementById("resolution");
     this.resolutionBtn = document.getElementById("resolutionBtn");
     this.resolutionMenu = document.getElementById("resolutionMenu");
-    this.statusDisplay = { textContent: "" };
 
     // State
     this.thumbnailShown = true;
@@ -37,12 +36,21 @@ class VideoEditor {
     this.isYoutube = this.videoContainer.dataset.isYoutube === 'true';
     this.isDragging = false;
     this.player = null;
+    this.ytPlayer = null;
+
+    // Subtitle State
+    this.subtitleOverlay = document.getElementById("customSubtitleOverlay");
+    this.currentSubtitles = [];
+    this.activeSubtitleIndex = -1;
+    this.subtitlesEnabled = false;
 
     this.init();
   }
 
   async init() {
     if (this.isYoutube) {
+      this.ytPlayerContainer = document.getElementById('ytPlayerContainer');
+      this.ytInteractionLayer = document.getElementById('ytInteractionLayer');
       await this.initYoutubePlayer();
     } else {
       this.initLocalPlayer();
@@ -80,30 +88,108 @@ class VideoEditor {
 
   initYoutubePlayer() {
     return new Promise((resolve) => {
+      const videoId = this.videoContainer.querySelector('#ytPlayerContainer').dataset.videoId;
+      console.log("Initializing YouTube Player for ID:", videoId);
+
       const setupPlayer = () => {
-        const ytPlayer = new YT.Player('youtubePlayer', {
+        if (!videoId) {
+            console.error("No YouTube Video ID found!");
+            resolve();
+            return;
+        }
+
+        this.ytPlayer = new YT.Player('youtubePlayer', {
+          videoId: videoId,
+          playerVars: {
+            'autoplay': 0,
+            'controls': 0,
+            'modestbranding': 1,
+            'rel': 0,
+            'enablejsapi': 1,
+            'iv_load_policy': 3,
+            'disablekb': 1,
+            'cc_load_policy': 1,
+            'cc_lang_pref': 'en',
+            'origin': window.location.origin
+          },
           events: {
             'onReady': (event) => {
+              console.log("YouTube Player Ready");
+
+              // Bind a helper to change captions dynamically
               this.player = {
-                play: () => ytPlayer.playVideo(),
-                pause: () => ytPlayer.pauseVideo(),
-                getCurrentTime: () => ytPlayer.getCurrentTime(),
-                getDuration: () => ytPlayer.getDuration(),
-                setCurrentTime: (t) => ytPlayer.seekTo(t, true),
-                setVolume: (v) => ytPlayer.setVolume(v),
-                getVolume: () => ytPlayer.getVolume(),
-                setMuted: (m) => m ? ytPlayer.mute() : ytPlayer.unMute(),
-                isMuted: () => ytPlayer.isMuted(),
-                setPlaybackRate: (r) => ytPlayer.setPlaybackRate(r),
-                isPaused: () => ytPlayer.getPlayerState() !== YT.PlayerState.PLAYING,
+                play: () => this.ytPlayer.playVideo(),
+                pause: () => this.ytPlayer.pauseVideo(),
+                getCurrentTime: () => this.ytPlayer.getCurrentTime(),
+                getDuration: () => this.ytPlayer.getDuration(),
+                setCurrentTime: (t) => this.ytPlayer.seekTo(t, true),
+                setVolume: (v) => this.ytPlayer.setVolume(v),
+                getVolume: () => this.ytPlayer.getVolume(),
+                setMuted: (m) => m ? this.ytPlayer.mute() : this.ytPlayer.unMute(),
+                isMuted: () => this.ytPlayer.isMuted(),
+                setPlaybackRate: (r) => this.ytPlayer.setPlaybackRate(r),
+                setCaptions: (lang) => {
+                    console.log("Setting captions forcefully to:", lang);
+                    if (lang === 'en') {
+                        if (!this.subtitlesEnabled || this.currentSubtitles.length === 0) {
+                            this.loadVttSubtitles('/subtitles/english.vtt');
+                        }
+                        this.subtitlesEnabled = true;
+                    } else {
+                        this.subtitlesEnabled = false;
+                        this.currentSubtitles = [];
+                        this.subtitleOverlay.innerHTML = '';
+                    }
+                },
+                isPaused: () => {
+                  const state = this.ytPlayer.getPlayerState();
+                  return state !== YT.PlayerState.PLAYING && state !== YT.PlayerState.BUFFERING;
+                },
                 getElement: () => document.getElementById('youtubePlayer'),
                 isReady: () => true
               };
-              this.durationDisplay.textContent = this.formatTime(ytPlayer.getDuration());
+              this.durationDisplay.textContent = this.formatTime(this.ytPlayer.getDuration());
+
+              // Enable English (Auto) at first of the second
+              if (this.player && this.player.setCaptions) {
+                  this.player.setCaptions('en');
+                  // Update UI menu
+                  document.querySelectorAll(".subtitle-option").forEach(b => b.classList.toggle('active', b.dataset.lang === 'en'));
+              }
+
               resolve();
             },
             'onStateChange': (event) => {
-              this.updatePlayPauseButton(event.data === YT.PlayerState.PLAYING);
+              const state = event.data;
+              this.updatePlayPauseButton(state === YT.PlayerState.PLAYING || state === YT.PlayerState.BUFFERING);
+
+              // Force English captions again whenever play starts to ensure they stay active
+              if (state === YT.PlayerState.PLAYING) {
+                if (this.player && this.player.setCaptions) {
+                   const activeLang = document.querySelector('.subtitle-option.active')?.dataset.lang;
+                   if (activeLang === 'en') this.player.setCaptions('en');
+                }
+              }
+
+              if (state === YT.PlayerState.BUFFERING) {
+                  this.loadingSpinner.classList.add('active');
+              } else {
+                  this.loadingSpinner.classList.remove('active');
+              }
+
+              // Hide YouTube's suggested videos by resetting to 0
+              if (state === YT.PlayerState.ENDED) {
+                this.player.setCurrentTime(0);
+                this.player.pause();
+                this.thumbnailOverlay.classList.remove("hidden");
+                this.thumbnailShown = true;
+                // Optional: hide player again till next play
+                this.ytPlayerContainer.style.display = 'none';
+              }
+            },
+            'onError': (e) => {
+                console.error("YouTube Player Error:", e.data);
+                resolve();
             }
           }
         });
@@ -112,33 +198,36 @@ class VideoEditor {
       if (window.YT && window.YT.Player) {
         setupPlayer();
       } else {
-        const oldOnReady = window.onYouTubeIframeAPIReady;
         window.onYouTubeIframeAPIReady = () => {
-          if (oldOnReady) oldOnReady();
+          console.log("YouTube API Loaded");
           setupPlayer();
         };
 
         if (!document.querySelector('script[src*="youtube.com/iframe_api"]')) {
-          const tag = document.createElement('script');
-          tag.src = "https://www.youtube.com/iframe_api";
-          const firstScriptTag = document.getElementsByTagName('script')[0];
-          firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+            const tag = document.createElement('script');
+            tag.src = "https://www.youtube.com/iframe_api";
+            const firstScriptTag = document.getElementsByTagName('script')[0];
+            firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
         }
       }
 
-      // Safeguard: resolve anyway after 5s if YT fails to load
+      // Safeguard: resolve anyway after 10s if YT fails to load
       setTimeout(() => {
           if (!this.player) {
               console.warn("YouTube API timeout - using mock player");
               this.player = { play:()=>{}, pause:()=>{}, getCurrentTime:()=>0, getDuration:()=>0, setCurrentTime:()=>{}, setVolume:()=>{}, getVolume:()=>100, setMuted:()=>{}, isMuted:()=>false, setPlaybackRate:()=>{}, isPaused:()=>true, getElement:()=>null, isReady:()=>false };
               resolve();
           }
-      }, 5000);
+      }, 10000);
     });
   }
 
   setupEventListeners() {
     this.thumbnailOverlay.addEventListener("click", () => this.handleThumbnailClick());
+
+    if (this.ytInteractionLayer) {
+        this.ytInteractionLayer.addEventListener("click", () => this.togglePlayPause());
+    }
 
     this.playPauseBtn.addEventListener("click", () => this.togglePlayPause());
 
@@ -156,7 +245,7 @@ class VideoEditor {
     this.speedBtn.addEventListener("click", () => this.speedMenu.classList.toggle("active"));
     document.querySelectorAll(".speed-option").forEach((btn) => {
       btn.addEventListener("click", (e) => {
-        const speed = parseFloat(e.target.dataset.speed);
+        const speed = parseFloat(e.currentTarget.dataset.speed);
         this.player.setPlaybackRate(speed);
         this.speedLabel.textContent = `${speed}x`;
         this.speedMenu.classList.remove("active");
@@ -166,25 +255,47 @@ class VideoEditor {
 
     this.fullscreenBtn.addEventListener("click", () => this.toggleFullscreen());
 
+    // Subtitles
+    this.subtitleBtn.addEventListener("click", () => this.subtitleMenu.classList.toggle("active"));
+    document.querySelectorAll(".subtitle-option").forEach((btn) => {
+      btn.addEventListener("click", (e) => {
+        const lang = e.currentTarget.dataset.lang;
+        if (this.player && this.player.setCaptions) {
+            this.player.setCaptions(lang);
+        }
+        this.subtitleMenu.classList.remove("active");
+        document.querySelectorAll(".subtitle-option").forEach(b => b.classList.toggle('active', b.dataset.lang === lang));
+      });
+    });
+
     // Menu closing
     document.addEventListener("click", (e) => {
         if (!this.speedBtn.contains(e.target) && !this.speedMenu.contains(e.target)) this.speedMenu.classList.remove("active");
+        if (!this.subtitleBtn.contains(e.target) && !this.subtitleMenu.contains(e.target)) this.subtitleMenu.classList.remove("active");
     });
 
     if (!this.isYoutube) {
         const video = this.player.getElement();
         video.addEventListener("play", () => this.updatePlayPauseButton(true));
         video.addEventListener("pause", () => this.updatePlayPauseButton(false));
+        video.addEventListener("waiting", () => this.loadingSpinner.classList.add('active'));
+        video.addEventListener("playing", () => this.loadingSpinner.classList.remove('active'));
+        video.addEventListener("ended", () => {
+          this.player.setCurrentTime(0);
+          this.thumbnailOverlay.classList.remove("hidden");
+          this.thumbnailShown = true;
+          this.updatePlayPauseButton(false);
+        });
     }
   }
 
   handleThumbnailClick() {
     if (this.isYoutube) {
-        document.getElementById('youtubePlayer').style.display = 'block';
+      this.ytPlayerContainer.style.display = 'block';
     }
     this.player.play();
-    this.thumbnailOverlay.classList.add("hidden");
-    this.thumbnailShown = false;
+    // Note: We no longer hide the thumbnail immediately on click.
+    // The updateLoop will handle hiding it once the removal time is reached.
   }
 
   updateLoop() {
@@ -200,20 +311,93 @@ class VideoEditor {
         this.durationDisplay.textContent = this.formatTime(duration);
       }
 
-      // Thumbnail logic
-      if (currentTime < this.thumbnailRemovalTime) {
-          if (!this.thumbnailShown && this.player.isPaused()) {
-            this.thumbnailOverlay.classList.remove("hidden");
-            this.thumbnailShown = true;
-          }
-      } else {
-        if (this.thumbnailShown) {
-            this.thumbnailOverlay.classList.add("hidden");
-            this.thumbnailShown = false;
-        }
+      // "Simultaneous" Thumbnail Logic:
+      // Show if within the first X seconds (e.g. 10s), hide if past it.
+      // This allows the video to play in the background while the thumbnail covers it.
+      const shouldShow = currentTime < this.thumbnailRemovalTime;
+
+      if (shouldShow && !this.thumbnailShown) {
+        this.thumbnailOverlay.classList.remove("hidden");
+        this.thumbnailShown = true;
+      } else if (!shouldShow && this.thumbnailShown) {
+        this.thumbnailOverlay.classList.add("hidden");
+        this.thumbnailShown = false;
       }
     }
+
+    // Custom Subtitle Update
+    if (this.subtitlesEnabled && this.player) {
+        this.renderSubtitles(this.player.getCurrentTime());
+    }
+
     requestAnimationFrame(() => this.updateLoop());
+  }
+
+  async loadVttSubtitles(url) {
+    try {
+        console.log("Loading VTT:", url);
+        const response = await fetch(url);
+        const text = await response.text();
+        this.currentSubtitles = this.parseVTT(text);
+        console.log(`Loaded ${this.currentSubtitles.length} subtitle cues`);
+    } catch (e) {
+        console.error("Failed to load VTT subtitles:", e);
+    }
+  }
+
+  parseVTT(vttText) {
+    const cues = [];
+    const lines = vttText.split(/\r?\n/);
+    let currentCue = null;
+
+    const timeRegex = /([\d:]+\.\d+)\s+-->\s+([\d:]+\.\d+)/;
+
+    for (let line of lines) {
+        line = line.trim();
+        if (!line || line === 'WEBVTT') continue;
+
+        const timeMatch = line.match(timeRegex);
+        if (timeMatch) {
+            if (currentCue) cues.push(currentCue);
+            currentCue = {
+                start: this.parseVttTime(timeMatch[1]),
+                end: this.parseVttTime(timeMatch[2]),
+                text: ""
+            };
+        } else if (currentCue) {
+            currentCue.text += (currentCue.text ? "\n" : "") + line;
+        }
+    }
+    if (currentCue) cues.push(currentCue);
+    return cues;
+  }
+
+  parseVttTime(timeStr) {
+    const parts = timeStr.split(':');
+    let seconds = 0;
+    if (parts.length === 3) {
+        seconds += parseFloat(parts[0]) * 3600;
+        seconds += parseFloat(parts[1]) * 60;
+        seconds += parseFloat(parts[2]);
+    } else {
+        seconds += parseFloat(parts[0]) * 60;
+        seconds += parseFloat(parts[1]);
+    }
+    return seconds;
+  }
+
+  renderSubtitles(currentTime) {
+    const activeCue = this.currentSubtitles.find(cue => currentTime >= cue.start && currentTime <= cue.end);
+
+    if (activeCue) {
+        if (this.activeSubtitleIndex !== this.currentSubtitles.indexOf(activeCue)) {
+            this.activeSubtitleIndex = this.currentSubtitles.indexOf(activeCue);
+            this.subtitleOverlay.innerHTML = `<div class="custom-subtitle-text">${activeCue.text.replace(/\n/g, '<br>')}</div>`;
+        }
+    } else {
+        this.activeSubtitleIndex = -1;
+        this.subtitleOverlay.innerHTML = '';
+    }
   }
 
   togglePlayPause() {
@@ -223,7 +407,7 @@ class VideoEditor {
       if (this.thumbnailShown) {
           this.thumbnailOverlay.classList.add("hidden");
           this.thumbnailShown = false;
-          if (this.isYoutube) document.getElementById('youtubePlayer').style.display = 'block';
+          if (this.isYoutube) this.ytPlayerContainer.style.display = 'block';
       }
     } else {
       this.player.pause();

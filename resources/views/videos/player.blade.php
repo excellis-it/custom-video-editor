@@ -54,14 +54,34 @@
                     </div>
 
                     @if ($video->is_youtube)
-                        <!-- YouTube Video Embed -->
-                        <iframe id="youtubePlayer"
-                            src="{{ str_replace('watch?v=', 'embed/', $video->video_path) }}?enablejsapi=1&rel=0"
-                            frameborder="0"
-                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                            allowfullscreen
-                            style="width: 100%; height: 100%; position: absolute; top: 0; left: 0; display: none;">
-                        </iframe>
+                        <!-- YouTube Video Embed (API will replace this div) -->
+                        @php
+                            $videoId = '';
+                            if (
+                                preg_match(
+                                    '/(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/ ]{11})/',
+                                    $video->video_path,
+                                    $matches,
+                                )
+                            ) {
+                                $videoId = $matches[1];
+                            }
+                        @endphp
+                        <div id="ytPlayerContainer"
+                            style="width: 100%; height: 100%; position: absolute; top: 0; left: 0; display: none; overflow: hidden;"
+                            data-video-id="{{ $videoId }}">
+                            <!-- Subtitle-Safe Clipping: Hide Top Title (-15%), keep bottom clear -->
+                            <div id="youtubePlayer"
+                                style="width: 100%; height: 120%; position: absolute; top: -15%; left: 0;">
+                            </div>
+                            <!-- Custom Subtitle Overlay -->
+                            <div id="customSubtitleOverlay" class="custom-subtitle-overlay"></div>
+
+                            <!-- Interaction layer captures clicks so YT iframe never sees the mouse -->
+                            <div id="ytInteractionLayer"
+                                style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 10; cursor: pointer;">
+                            </div>
+                        </div>
                     @else
                         <!-- Local Video Element -->
                         <video id="videoPlayer" crossorigin="anonymous">
@@ -187,8 +207,8 @@
                                         </svg>
                                     </button>
                                     <div class="subtitle-menu" id="subtitleMenu">
-                                        <button class="subtitle-option active" data-lang="off">Off</button>
-                                        <button class="subtitle-option" data-lang="en">English</button>
+                                        <button class="subtitle-option" data-lang="off">Off</button>
+                                        <button class="subtitle-option active" data-lang="en">English (Auto)</button>
                                     </div>
                                 </div>
 
