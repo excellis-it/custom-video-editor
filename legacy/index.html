@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Advanced custom video editor with multi-language subtitles, playback controls, and premium features">
+    <title>Premium Video Editor - Advanced Playback Controls</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="app-container">
+  
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Video Player Section -->
+            <div class="video-section">
+                <div class="video-container" id="videoContainer">
+                    <!-- Thumbnail Overlay (shows for first 10 seconds) -->
+                    <div class="thumbnail-overlay" id="thumbnailOverlay">
+                        <div class="thumbnail-content">
+                            <div class="thumbnail-icon">▶</div>
+                            <p class="thumbnail-text">Click to Play</p>
+                        </div>
+                    </div>
+
+                    <!-- Video Element -->
+                    <video id="videoPlayer" crossorigin="anonymous">
+                        <source src="Gehra Hua - Dhurandhar_HD_720p-(HDvideo9).mp4" type="video/mp4">
+                        <!-- Subtitle tracks -->
+                        <track kind="subtitles" src="subtitles/english.vtt" srclang="en" label="English">
+                        Your browser does not support the video tag.
+                    </video>
+
+                    <!-- Custom Subtitle Display -->
+                    <div class="custom-subtitles" id="customSubtitles"></div>
+
+                    <!-- Loading Spinner -->
+                    <div class="loading-spinner" id="loadingSpinner">
+                        <div class="spinner"></div>
+                    </div>
+
+                    <!-- Video Controls (Moved inside container for Fullscreen support) -->
+                    <div class="controls-panel">
+                        <!-- Progress Bar -->
+                        <div class="progress-container">
+                            <div class="progress-bar" id="progressBar">
+                                <div class="progress-filled" id="progressFilled"></div>
+                                <div class="progress-handle" id="progressHandle"></div>
+                            </div>
+                            <div class="time-display">
+                                <span id="currentTime">00:00</span>
+                                <span class="time-separator"></span>
+                                <span id="duration">00:00</span>
+                            </div>
+                        </div>
+
+                        <!-- Control Buttons -->
+                        <div class="controls-row">
+                            <div class="controls-left">
+                                <!-- Play/Pause -->
+                                <button class="control-btn primary-btn" id="playPauseBtn" title="Play/Pause">
+                                    <svg class="play-icon" width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                                        <path d="M8 5v14l11-7z"/>
+                                    </svg>
+                                    <svg class="pause-icon hidden" width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                                        <path d="M6 4h4v16H6V4zm8 0h4v16h-4V4z"/>
+                                    </svg>
+                                </button>
+
+                                <!-- Skip Backward -->
+                                <button class="control-btn" id="skipBackBtn" title="Skip 5s Backward">
+                                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M11 17l-5-5 5-5M18 17l-5-5 5-5"/>
+                                    </svg>
+                                    <span class="skip-label">5s</span>
+                                </button>
+
+                                <!-- Skip Forward -->
+                                <button class="control-btn" id="skipForwardBtn" title="Skip 5s Forward">
+                                    <span class="skip-label">5s</span>
+                                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M13 17l5-5-5-5M6 17l5-5-5-5"/>
+                                    </svg>
+                                </button>
+
+                                <!-- Volume Control -->
+                                <div class="volume-control">
+                                    <button class="control-btn" id="muteBtn" title="Mute/Unmute">
+                                        <svg class="volume-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
+                                            <path d="M15.54 8.46a5 5 0 0 1 0 7.07"/>
+                                            <path d="M19.07 4.93a10 10 0 0 1 0 14.14"/>
+                                        </svg>
+                                        <svg class="mute-icon hidden" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
+                                            <line x1="23" y1="9" x2="17" y2="15"/>
+                                            <line x1="17" y1="9" x2="23" y2="15"/>
+                                        </svg>
+                                    </button>
+                                    <div class="volume-slider-container">
+                                        <input type="range" class="volume-slider" id="volumeSlider" min="0" max="100" value="100">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="controls-right">
+                                <!-- Resolution Control -->
+                                <div class="resolution-control">
+                                    <button class="control-btn" id="resolutionBtn" title="Video Resolution">
+                                        <span class="resolution-label" id="resolution">720p</span>
+                                    </button>
+                                    <div class="resolution-menu" id="resolutionMenu">
+                                        <button class="resolution-option" data-res="360">360p</button>
+                                        <button class="resolution-option" data-res="480">480p</button>
+                                        <button class="resolution-option active" data-res="720">720p</button>
+                                        <button class="resolution-option" data-res="1080">1080p</button>
+                                    </div>
+                                </div>
+
+                                <!-- Speed Control -->
+                                <div class="speed-control">
+                                    <button class="control-btn" id="speedBtn" title="Playback Speed">
+                                        <span class="speed-label" id="speedLabel">1x</span>
+                                    </button>
+                                    <div class="speed-menu" id="speedMenu">
+                                        <button class="speed-option" data-speed="0.25">0.25x</button>
+                                        <button class="speed-option" data-speed="0.5">0.5x</button>
+                                        <button class="speed-option" data-speed="0.75">0.75x</button>
+                                        <button class="speed-option active" data-speed="1">1x</button>
+                                        <button class="speed-option" data-speed="1.25">1.25x</button>
+                                        <button class="speed-option" data-speed="1.5">1.5x</button>
+                                        <button class="speed-option" data-speed="1.75">1.75x</button>
+                                        <button class="speed-option" data-speed="2">2x</button>
+                                    </div>
+                                </div>
+
+                                <!-- Subtitle Control -->
+                                <div class="subtitle-control">
+                                    <button class="control-btn" id="subtitleBtn" title="Subtitles">
+                                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <rect x="2" y="4" width="20" height="16" rx="2"/>
+                                            <path d="M7 15h4m6 0h2M7 11h2m4 0h6"/>
+                                        </svg>
+                                    </button>
+                                    <div class="subtitle-menu" id="subtitleMenu">
+                                        <button class="subtitle-option active" data-lang="off">Off</button>
+                                        <button class="subtitle-option" data-lang="en">English</button>
+                                    </div>
+                                </div>
+
+                                <!-- Fullscreen Control -->
+                                <button class="control-btn" id="fullscreenBtn" title="Toggle Fullscreen">
+                                    <svg class="maximize-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/>
+                                    </svg>
+                                    <svg class="minimize-icon hidden" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M8 3v3a2 2 0 0 1-2 2H3m18 0h-3a2 2 0 0 1-2-2V3m0 18v-3a2 2 0 0 1 2-2h3M3 16h3a2 2 0 0 1 2 2v3"/>
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+           
+        </main>
+
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
