@@ -17,19 +17,22 @@
             top: 20px;
             left: 20px;
             z-index: 1000;
-            background: rgba(15, 23, 42, 0.7);
+            background: linear-gradient(135deg, rgba(139, 92, 246, 0.9) 0%, rgba(236, 72, 153, 0.9) 100%);
             color: white;
-            padding: 10px 20px;
-            border-radius: 8px;
+            padding: 12px 24px;
+            border-radius: 12px;
             text-decoration: none;
-            backdrop-filter: blur(5px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            transition: all 0.2s;
+            backdrop-filter: blur(10px);
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            transition: all 0.3s ease;
+            font-weight: 600;
+            box-shadow: 0 4px 16px rgba(139, 92, 246, 0.4), 0 2px 8px rgba(236, 72, 153, 0.3);
         }
 
         .back-btn:hover {
-            background: rgba(15, 23, 42, 0.9);
-            transform: translateX(-5px);
+            background: linear-gradient(135deg, rgba(139, 92, 246, 1) 0%, rgba(236, 72, 153, 1) 50%, rgba(249, 115, 22, 1) 100%);
+            transform: translateX(-5px) translateY(-2px);
+            box-shadow: 0 8px 24px rgba(139, 92, 246, 0.5), 0 4px 12px rgba(236, 72, 153, 0.4);
         }
 
         .toggle-button {
@@ -84,7 +87,8 @@
 
         /* Checked state */
         .switch input:checked+.slider {
-            background-color: #0d6efd;
+            background: linear-gradient(135deg, #8B5CF6 0%, #EC4899 100%);
+            box-shadow: 0 2px 8px rgba(139, 92, 246, 0.4), 0 1px 4px rgba(236, 72, 153, 0.3);
         }
 
         .switch input:checked+.slider::before {
