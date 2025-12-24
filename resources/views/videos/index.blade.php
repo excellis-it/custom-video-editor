@@ -271,14 +271,18 @@
             color: #94a3b8;
             font-size: 1.1rem;
         }
+        .head{
+            margin-top: 0px;
+        }
     </style>
 </head>
 
 <body>
     <div class="container">
         <header class="header">
-            <h1>Premium Video Editor</h1>
-            <p>Upload and manage your videos with custom thumbnails</p>
+            <img src="http://myjustimagine.excellisit.net/storage/company_logos/vhvxtG9oPyRGn2WDnX1aikD9iAkMsSR8e2Raanef.png" alt="Logo" class="logo">
+            <h1 class="head">Just Imagine Video Player</h1>
+            {{-- <p>Upload and manage your videos with custom thumbnails</p> --}}
         </header>
 
         @if (session('success'))
@@ -299,9 +303,9 @@
             </div>
         @endif
 
-        <div class="tabs">
-            <button class="tab-btn active">YouTube Integrated Downloader</button>
-        </div>
+        {{-- <div class="tabs">
+            <button class="tab-btn active">Just Imagine Video Player</button>
+        </div> --}}
 
         <section class="upload-section" id="youtube-upload">
             <h2 class="form-title">Add YouTube Video</h2>

@@ -96,6 +96,14 @@ body {
     align-items: center;
 }
 
+.logo {
+    height: 80px;      /* adjust as needed */
+    width: auto;
+    object-fit: contain;
+    margin-right: 100%;
+    background: #fff;
+}
+
 .app-title {
     font-size: 2rem;
     font-weight: 700;
