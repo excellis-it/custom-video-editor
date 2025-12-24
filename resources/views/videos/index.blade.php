@@ -280,7 +280,7 @@
 <body>
     <div class="container">
         <header class="header">
-            <img src="http://myjustimagine.excellisit.net/storage/company_logos/vhvxtG9oPyRGn2WDnX1aikD9iAkMsSR8e2Raanef.png" alt="Logo" class="logo">
+            <img src="{{asset('images/logo.png')}}" alt="Logo" class="logo">
             <h1 class="head">Just Imagine Video Player</h1>
             {{-- <p>Upload and manage your videos with custom thumbnails</p> --}}
         </header>
