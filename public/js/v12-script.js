@@ -176,18 +176,8 @@ class VideoEditor {
                             const state = event.data;
                             this.updatePlayPauseButton(state === YT.PlayerState.PLAYING || state === YT.PlayerState.BUFFERING);
 
-                            // if (state === YT.PlayerState.PLAYING) {
-                            //     this.ytInteractionLayer.style.display = 'none';
-                            // }
-
-
-                            // if (state === YT.PlayerState.PAUSED) {
-                            //     this.ytInteractionLayer.style.display = 'none';
-                            // }
-
                             // Force English captions again whenever play starts to ensure they stay active
                             if (state === YT.PlayerState.PLAYING) {
-                                ytInteractionLayer.style.display = 'none';
                                 if (this.player && this.player.setCaptions) {
                                     const activeLang = document.querySelector('.subtitle-option.active')?.dataset.lang;
                                     if (activeLang === 'en') this.player.setCaptions('en');
