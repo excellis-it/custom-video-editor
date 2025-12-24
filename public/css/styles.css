@@ -8,39 +8,81 @@
 }
 
 :root {
-    /* Color Palette */
-    --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    --secondary-gradient: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-    --accent-gradient: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
-    --dark-gradient: linear-gradient(135deg,
-            #0f0c29 0%,
-            #302b63 50%,
-            #24243e 100%);
+    /* Logo-Inspired Color Palette - "Been There Done That" */
+    /* Vibrant multi-color scheme matching the colorful stamps in the logo */
+    --color-purple: #8b5cf6; /* Purple stamp */
+    --color-pink: #ec4899; /* Pink/Magenta stamp */
+    --color-orange: #f97316; /* Orange stamp */
+    --color-yellow: #fcd34d; /* Yellow stamp */
+    --color-green: #10b981; /* Green stamp */
+    --color-blue: #3b82f6; /* Blue stamp */
+    --color-red: #ef4444; /* Red stamp */
+    --color-teal: #14b8a6; /* Teal accent */
 
-    /* Base Colors */
-    --bg-primary: #0a0a0f;
-    --bg-secondary: #1a1a2e;
-    --bg-tertiary: #16213e;
+    /* Primary Gradients - Multi-color inspired by logo */
+    --primary-gradient: linear-gradient(
+        135deg,
+        #8b5cf6 0%,
+        #ec4899 50%,
+        #f97316 100%
+    );
+    --secondary-gradient: linear-gradient(
+        135deg,
+        #3b82f6 0%,
+        #10b981 50%,
+        #fcd34d 100%
+    );
+    --accent-gradient: linear-gradient(135deg, #ec4899 0%, #8b5cf6 100%);
+    --rainbow-gradient: linear-gradient(
+        90deg,
+        #ef4444 0%,
+        #f97316 16.66%,
+        #fcd34d 33.33%,
+        #10b981 50%,
+        #3b82f6 66.66%,
+        #8b5cf6 83.33%,
+        #ec4899 100%
+    );
+
+    /* Background - Clean and light to match logo's white background */
+    --dark-gradient: linear-gradient(
+        135deg,
+        #0f172a 0%,
+        #1e293b 50%,
+        #334155 100%
+    );
+    --light-gradient: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+
+    /* Base Colors - Dark theme with pops of color */
+    --bg-primary: #0f172a; /* Deep slate */
+    --bg-secondary: #1e293b; /* Slate 800 */
+    --bg-tertiary: #334155; /* Slate 700 */
     --surface: rgba(255, 255, 255, 0.05);
     --surface-hover: rgba(255, 255, 255, 0.1);
+    --surface-light: rgba(255, 255, 255, 0.95);
 
     /* Text Colors */
-    --text-primary: #ffffff;
-    --text-secondary: #b4b4b4;
-    --text-muted: #6b6b6b;
+    --text-primary: #f8fafc; /* Almost white */
+    --text-secondary: #cbd5e1; /* Slate 300 */
+    --text-muted: #64748b; /* Slate 500 */
+    --text-dark: #0f172a; /* Dark text for light backgrounds */
 
-    /* Accent Colors */
-    --accent-primary: #667eea;
-    --accent-secondary: #764ba2;
-    --accent-success: #10b981;
-    --accent-warning: #f59e0b;
-    --accent-danger: #ef4444;
+    /* Accent Colors - Matching logo stamps */
+    --accent-primary: #8b5cf6; /* Purple */
+    --accent-secondary: #ec4899; /* Pink */
+    --accent-success: #10b981; /* Green */
+    --accent-warning: #fcd34d; /* Yellow */
+    --accent-danger: #ef4444; /* Red */
+    --accent-info: #3b82f6; /* Blue */
 
-    /* Shadows */
+    /* Shadows - Enhanced with color */
     --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.1);
-    --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.2);
-    --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.3);
-    --shadow-glow: 0 0 32px rgba(102, 126, 234, 0.3);
+    --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.15);
+    --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.2);
+    --shadow-glow: 0 0 32px rgba(139, 92, 246, 0.4);
+    --shadow-glow-pink: 0 0 32px rgba(236, 72, 153, 0.4);
+    --shadow-glow-multi: 0 0 40px rgba(139, 92, 246, 0.3),
+        0 0 60px rgba(236, 72, 153, 0.2);
 
     /* Transitions */
     --transition-fast: 0.2s ease;
@@ -52,6 +94,7 @@
     --radius-md: 12px;
     --radius-lg: 16px;
     --radius-xl: 24px;
+    --radius-full: 9999px;
 
     /* Spacing */
     --spacing-xs: 4px;
@@ -59,6 +102,7 @@
     --spacing-md: 16px;
     --spacing-lg: 24px;
     --spacing-xl: 32px;
+    --spacing-2xl: 48px;
 }
 
 body {
@@ -97,7 +141,7 @@ body {
 }
 
 .logo {
-    height: 80px;      /* adjust as needed */
+    height: 80px; /* adjust as needed */
     width: auto;
     object-fit: contain;
     margin-right: 100%;
@@ -174,7 +218,7 @@ body {
     background: #000;
     border-radius: var(--radius-md);
     overflow: hidden;
-    box-shadow: var(--shadow-glow);
+    box-shadow: var(--shadow-glow-multi);
 }
 
 #videoPlayer {
@@ -193,9 +237,12 @@ body {
     left: 0;
     width: 100%;
     height: 100%;
-    background: linear-gradient(135deg,
-            rgba(102, 126, 234, 0.9) 0%,
-            rgba(118, 75, 162, 0.9) 100%);
+    background: linear-gradient(
+        135deg,
+        rgba(139, 92, 246, 0.95) 0%,
+        rgba(236, 72, 153, 0.95) 50%,
+        rgba(249, 115, 22, 0.95) 100%
+    );
     display: flex;
     align-items: center;
     justify-content: center;
@@ -239,7 +286,6 @@ body {
 }
 
 @keyframes pulse {
-
     0%,
     100% {
         transform: scale(1);
@@ -356,7 +402,8 @@ body {
     background: var(--primary-gradient);
     width: 0%;
     transition: width 0.1s linear;
-    box-shadow: 0 0 8px rgba(102, 126, 234, 0.5);
+    box-shadow: 0 0 12px rgba(139, 92, 246, 0.6),
+        0 0 20px rgba(236, 72, 153, 0.4);
 }
 
 .progress-handle {
@@ -420,9 +467,15 @@ body {
 }
 
 .control-btn:hover {
-    background: var(--surface-hover);
+    background: linear-gradient(
+        135deg,
+        rgba(139, 92, 246, 0.15) 0%,
+        rgba(236, 72, 153, 0.15) 100%
+    );
+    border-color: rgba(139, 92, 246, 0.3);
     transform: translateY(-2px);
-    box-shadow: var(--shadow-md);
+    box-shadow: 0 4px 12px rgba(139, 92, 246, 0.2),
+        0 2px 6px rgba(236, 72, 153, 0.15);
 }
 
 .control-btn:active {
@@ -434,11 +487,13 @@ body {
     border: none;
     padding: var(--spacing-md) var(--spacing-lg);
     font-weight: 600;
-    box-shadow: var(--shadow-glow);
+    box-shadow: var(--shadow-glow-multi);
 }
 
 .primary-btn:hover {
-    box-shadow: 0 0 48px rgba(102, 126, 234, 0.5);
+    box-shadow: 0 0 48px rgba(139, 92, 246, 0.6),
+        0 0 64px rgba(236, 72, 153, 0.4);
+    transform: translateY(-3px);
 }
 
 .hidden {
@@ -591,18 +646,24 @@ body {
 .speed-option:hover,
 .subtitle-option:hover,
 .resolution-option:hover {
-    background: var(--surface-hover);
+    background: linear-gradient(
+        135deg,
+        rgba(139, 92, 246, 0.2) 0%,
+        rgba(236, 72, 153, 0.2) 100%
+    );
     color: var(--text-primary);
+    transform: translateX(4px);
 }
 
 .speed-option.active,
 .subtitle-option.active,
 .resolution-option.active {
     background: var(--primary-gradient);
-    color: var(--text-primary);
+    color: white;
     font-weight: 600;
+    box-shadow: 0 4px 12px rgba(139, 92, 246, 0.4),
+        0 2px 8px rgba(236, 72, 153, 0.3);
 }
-
 /* ===================================
    INFO PANEL
    =================================== */
@@ -756,7 +817,6 @@ body {
 }
 
 @media (max-width: 480px) {
-
     .controls-left,
     .controls-right {
         flex-wrap: wrap;
