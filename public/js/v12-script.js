@@ -93,6 +93,9 @@ class VideoEditor {
                     this.loadVttSubtitles(this.subtitlePath);
                     this.subtitlesEnabled = true;
                 }
+            },
+            setQuality: (res) => {
+                console.log(`Setting local quality to: ${res}p (Note: multi-resolution for local files is not yet implemented)`);
             }
         };
 
@@ -158,8 +161,20 @@ class VideoEditor {
                                     const state = this.ytPlayer.getPlayerState();
                                     return state !== YT.PlayerState.PLAYING && state !== YT.PlayerState.BUFFERING;
                                 },
-                                getElement: () => document.getElementById('youtubePlayer'),
-                                isReady: () => true
+                                element: () => document.getElementById('youtubePlayer'),
+                                isReady: () => true,
+                                setQuality: (res) => {
+                                    if (!this.ytPlayer) return;
+                                    const qualityMap = {
+                                        '360': 'medium',
+                                        '480': 'large',
+                                        '720': 'hd720',
+                                        '1080': 'hd1080'
+                                    };
+                                    const quality = qualityMap[res] || 'default';
+                                    console.log(`Setting YT quality to: ${quality} (from ${res})`);
+                                    this.ytPlayer.setPlaybackQuality(quality);
+                                }
                             };
                             this.durationDisplay.textContent = this.formatTime(this.ytPlayer.getDuration());
 
@@ -182,6 +197,8 @@ class VideoEditor {
                                     const activeLang = document.querySelector('.subtitle-option.active')?.dataset.lang;
                                     if (activeLang === 'en') this.player.setCaptions('en');
                                 }
+                                // Ensure interaction layer is hidden when playing
+                                if (this.ytInteractionLayer) this.ytInteractionLayer.style.display = 'none';
                             }
 
                             if (state === YT.PlayerState.BUFFERING) {
@@ -284,10 +301,20 @@ class VideoEditor {
             });
         });
 
+        // Resolution Control
+        this.resolutionBtn.addEventListener("click", () => this.resolutionMenu.classList.toggle("active"));
+        document.querySelectorAll(".resolution-option").forEach((btn) => {
+            btn.addEventListener("click", (e) => {
+                const res = e.currentTarget.dataset.res;
+                this.changeResolution(res);
+            });
+        });
+
         // Menu closing
         document.addEventListener("click", (e) => {
             if (!this.speedBtn.contains(e.target) && !this.speedMenu.contains(e.target)) this.speedMenu.classList.remove("active");
             if (!this.subtitleBtn.contains(e.target) && !this.subtitleMenu.contains(e.target)) this.subtitleMenu.classList.remove("active");
+            if (!this.resolutionBtn.contains(e.target) && !this.resolutionMenu.contains(e.target)) this.resolutionMenu.classList.remove("active");
         });
 
         if (!this.isYoutube) {
@@ -327,12 +354,22 @@ class VideoEditor {
     }
 
     handleThumbnailClick() {
-        if (this.isYoutube) {
-            this.ytPlayerContainer.style.display = 'block';
-        }
+        this.activatePlayer();
         this.player.play();
         // Note: We no longer hide the thumbnail immediately on click.
         // The updateLoop will handle hiding it once the removal time is reached.
+    }
+
+    activatePlayer() {
+        if (this.isYoutube && this.ytPlayerContainer) {
+            this.ytPlayerContainer.style.display = 'block';
+        }
+        if (this.thumbnailShown) {
+            // We don't necessarily hide the thumbnail here if it's within the first 10s,
+            // but for a user-initiated seek or play, we might want to ensure visibility.
+            // If they seek, we should probably hide it if they are past the time.
+            // The updateLoop handles the temporal logic.
+        }
     }
 
     updateLoop() {
@@ -532,6 +569,7 @@ class VideoEditor {
 
     seek(e) {
         if (!this.player) return;
+        this.activatePlayer();
         const rect = this.progressBar.getBoundingClientRect();
         const percentage = (e.clientX - rect.left) / rect.width;
         this.player.setCurrentTime(percentage * this.player.getDuration());
@@ -539,6 +577,7 @@ class VideoEditor {
 
     handleProgressDrag(e) {
         if (!this.isDragging || !this.player) return;
+        this.activatePlayer();
         const rect = this.progressBar.getBoundingClientRect();
         let percentage = (e.clientX - rect.left) / rect.width;
         percentage = Math.max(0, Math.min(1, percentage));
@@ -572,6 +611,22 @@ class VideoEditor {
                 case "KeyF": this.toggleFullscreen(); break;
             }
         });
+    }
+
+    changeResolution(res) {
+        console.log(`Changing resolution to: ${res}p`);
+        this.resolutionDisplay.textContent = `${res}p`;
+
+        if (this.player && this.player.setQuality) {
+            this.player.setQuality(res);
+        }
+
+        // Update active state in menu
+        document.querySelectorAll(".resolution-option").forEach((btn) => {
+            btn.classList.toggle("active", btn.dataset.res === res);
+        });
+
+        this.resolutionMenu.classList.remove("active");
     }
 }
 
