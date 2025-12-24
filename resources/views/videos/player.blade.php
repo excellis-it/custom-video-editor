@@ -43,7 +43,8 @@
             <!-- Video Player Section -->
             <div class="video-section">
                 <div class="video-container" id="videoContainer" data-thumbnail-timing="{{ $video->thumbnail_timing }}"
-                    data-is-youtube="{{ $video->is_youtube ? 'true' : 'false' }}">
+                    data-is-youtube="{{ $video->is_youtube ? 'true' : 'false' }}"
+                    data-subtitle-path="{{ $video->subtitle_path ? asset('storage/' . $video->subtitle_path) : '' }}">
                     <!-- Thumbnail Overlay -->
                     <div class="thumbnail-overlay" id="thumbnailOverlay"
                         style="{{ $video->thumbnail_path ? 'background-image: url(' . asset('storage/' . $video->thumbnail_path) . '); background-size: cover; background-position: center;' : '' }}">
@@ -74,9 +75,6 @@
                             <div id="youtubePlayer"
                                 style="width: 100%; height: 120%; position: absolute; top: -15%; left: 0;">
                             </div>
-                            <!-- Custom Subtitle Overlay -->
-                            <div id="customSubtitleOverlay" class="custom-subtitle-overlay"></div>
-
                             <!-- Interaction layer captures clicks so YT iframe never sees the mouse -->
                             <div id="ytInteractionLayer"
                                 style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 10; cursor: pointer;">
@@ -93,8 +91,8 @@
                         </video>
                     @endif
 
-                    <!-- Custom Subtitle Display -->
-                    <div class="custom-subtitles" id="customSubtitles"></div>
+                    <!-- Shared Custom Subtitle Overlay -->
+                    <div id="customSubtitleOverlay" class="custom-subtitle-overlay"></div>
 
                     <!-- Loading Spinner -->
                     <div class="loading-spinner" id="loadingSpinner">
@@ -208,7 +206,16 @@
                                     </button>
                                     <div class="subtitle-menu" id="subtitleMenu">
                                         <button class="subtitle-option" data-lang="off">Off</button>
-                                        <button class="subtitle-option active" data-lang="en">English (Auto)</button>
+                                        <button class="subtitle-option active" data-lang="en">English
+                                            (Original)</button>
+                                        <div class="menu-divider"></div>
+                                        <div class="menu-header">Auto-Translate</div>
+                                        <button class="subtitle-option" data-lang="es">Spanish (Español)</button>
+                                        <button class="subtitle-option" data-lang="fr">French (Français)</button>
+                                        <button class="subtitle-option" data-lang="de">German (Deutsch)</button>
+                                        <button class="subtitle-option" data-lang="hi">Hindi (हिन्दी)</button>
+                                        <button class="subtitle-option" data-lang="ar">Arabic (العربية)</button>
+                                        <button class="subtitle-option" data-lang="ja">Japanese (日本語)</button>
                                     </div>
                                 </div>
 

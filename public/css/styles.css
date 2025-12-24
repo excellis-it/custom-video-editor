@@ -549,6 +549,22 @@ body {
     transition: all var(--transition-fast);
     text-align: left;
     font-size: 0.875rem;
+    width: 100%;
+}
+
+.menu-divider {
+    height: 1px;
+    background: rgba(255, 255, 255, 0.1);
+    margin: var(--spacing-xs) 0;
+}
+
+.menu-header {
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: var(--spacing-xs) var(--spacing-md);
 }
 
 .speed-option:hover,

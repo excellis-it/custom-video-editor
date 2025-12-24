@@ -34,6 +34,7 @@ class VideoEditor {
     this.thumbnailShown = true;
     this.thumbnailRemovalTime = parseInt(this.videoContainer.dataset.thumbnailTiming) || 10;
     this.isYoutube = this.videoContainer.dataset.isYoutube === 'true';
+    this.subtitlePath = this.videoContainer.dataset.subtitlePath || '/subtitles/english.vtt';
     this.isDragging = false;
     this.player = null;
     this.ytPlayer = null;
@@ -41,8 +42,10 @@ class VideoEditor {
     // Subtitle State
     this.subtitleOverlay = document.getElementById("customSubtitleOverlay");
     this.currentSubtitles = [];
+    this.originalSubtitles = [];
     this.activeSubtitleIndex = -1;
     this.subtitlesEnabled = false;
+    this.isTranslating = false;
 
     this.init();
   }
@@ -78,7 +81,20 @@ class VideoEditor {
       setPlaybackRate: (r) => (video.playbackRate = r),
       isPaused: () => video.paused,
       getElement: () => video,
-      isReady: () => video.readyState >= 1
+      isReady: () => video.readyState >= 1,
+      setCaptions: (lang) => {
+        console.log("Setting local captions to:", lang);
+        if (lang === 'off') {
+            this.subtitlesEnabled = false;
+            this.currentSubtitles = [];
+            this.subtitleOverlay.innerHTML = '';
+        } else if (lang === 'en') {
+            this.loadVttSubtitles(this.subtitlePath);
+            this.subtitlesEnabled = true;
+        } else {
+            this.loadAutoTranslate(lang);
+        }
+      }
     };
 
     video.addEventListener("loadedmetadata", () => {
@@ -108,8 +124,8 @@ class VideoEditor {
             'enablejsapi': 1,
             'iv_load_policy': 3,
             'disablekb': 1,
-            'cc_load_policy': 1,
-            'cc_lang_pref': 'en',
+            // 'cc_load_policy': 1,
+            // 'cc_lang_pref': 'en',
             'origin': window.location.origin
           },
           events: {
@@ -130,15 +146,15 @@ class VideoEditor {
                 setPlaybackRate: (r) => this.ytPlayer.setPlaybackRate(r),
                 setCaptions: (lang) => {
                     console.log("Setting captions forcefully to:", lang);
-                    if (lang === 'en') {
-                        if (!this.subtitlesEnabled || this.currentSubtitles.length === 0) {
-                            this.loadVttSubtitles('/subtitles/english.vtt');
-                        }
-                        this.subtitlesEnabled = true;
-                    } else {
+                    if (lang === 'off') {
                         this.subtitlesEnabled = false;
                         this.currentSubtitles = [];
                         this.subtitleOverlay.innerHTML = '';
+                    } else if (lang === 'en') {
+                        this.loadVttSubtitles(this.subtitlePath);
+                        this.subtitlesEnabled = true;
+                    } else {
+                        this.loadAutoTranslate(lang);
                     }
                 },
                 isPaused: () => {
@@ -339,9 +355,68 @@ class VideoEditor {
         const response = await fetch(url);
         const text = await response.text();
         this.currentSubtitles = this.parseVTT(text);
+        // Cache original English subtitles if they aren't already
+        if ((url === this.subtitlePath || url.includes('english.vtt')) && this.originalSubtitles.length === 0) {
+            this.originalSubtitles = JSON.parse(JSON.stringify(this.currentSubtitles));
+        }
         console.log(`Loaded ${this.currentSubtitles.length} subtitle cues`);
     } catch (e) {
         console.error("Failed to load VTT subtitles:", e);
+    }
+  }
+
+  async loadAutoTranslate(lang) {
+    if (this.isTranslating) return;
+
+    // Check if we already have original subtitles, if not load them first
+    if (this.originalSubtitles.length === 0) {
+        await this.loadVttSubtitles(this.subtitlePath);
+    }
+
+    if (this.originalSubtitles.length === 0) {
+        console.error("No source subtitles found to translate");
+        return;
+    }
+
+    console.log(`Auto-translating to: ${lang}`);
+    this.isTranslating = true;
+    this.loadingSpinner.classList.add('active');
+
+    try {
+        // Translate in chunks if necessary, but 2.5KB is small enough for one go.
+        // We use a separator that Google Translate usually preserves.
+        const separator = " [[|]] ";
+        const combinedText = this.originalSubtitles.map(c => c.text).join(separator);
+
+        const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=${lang}&dt=t&q=${encodeURIComponent(combinedText)}`;
+
+        const response = await fetch(url);
+        const data = await response.json();
+
+        // Google returns parts of the translated text in an array
+        let translatedText = "";
+        if (data && data[0]) {
+            translatedText = data[0].map(item => item[0]).join("");
+        }
+
+        if (!translatedText) throw new Error("Translation returned empty result");
+
+        const translatedParts = translatedText.split(separator.trim());
+
+        this.currentSubtitles = this.originalSubtitles.map((cue, index) => ({
+            ...cue,
+            text: translatedParts[index] ? translatedParts[index].trim() : cue.text
+        }));
+
+        this.subtitlesEnabled = true;
+        this.activeSubtitleIndex = -1; // Force re-render
+        console.log("Translation complete");
+    } catch (e) {
+        console.error("Translation failed:", e);
+        alert("Failed to auto-translate subtitles. Please try again.");
+    } finally {
+        this.isTranslating = false;
+        this.loadingSpinner.classList.remove('active');
     }
   }
 
