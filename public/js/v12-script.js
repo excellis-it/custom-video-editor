@@ -42,10 +42,10 @@ class VideoEditor {
     // Subtitle State
     this.subtitleOverlay = document.getElementById("customSubtitleOverlay");
     this.currentSubtitles = [];
-    this.originalSubtitles = [];
     this.activeSubtitleIndex = -1;
     this.subtitlesEnabled = false;
-    this.isTranslating = false;
+    this.currentLang = 'original'; // 'original' or 'en'
+    this.translationCache = {};
 
     this.init();
   }
@@ -86,13 +86,11 @@ class VideoEditor {
         console.log("Setting local captions to:", lang);
         if (lang === 'off') {
             this.subtitlesEnabled = false;
-            this.currentSubtitles = [];
             this.subtitleOverlay.innerHTML = '';
-        } else if (lang === 'en') {
+        } else {
+            this.currentLang = lang;
             this.loadVttSubtitles(this.subtitlePath);
             this.subtitlesEnabled = true;
-        } else {
-            this.loadAutoTranslate(lang);
         }
       }
     };
@@ -148,13 +146,11 @@ class VideoEditor {
                     console.log("Setting captions forcefully to:", lang);
                     if (lang === 'off') {
                         this.subtitlesEnabled = false;
-                        this.currentSubtitles = [];
                         this.subtitleOverlay.innerHTML = '';
-                    } else if (lang === 'en') {
+                    } else {
+                        this.currentLang = lang;
                         this.loadVttSubtitles(this.subtitlePath);
                         this.subtitlesEnabled = true;
-                    } else {
-                        this.loadAutoTranslate(lang);
                     }
                 },
                 isPaused: () => {
@@ -168,9 +164,9 @@ class VideoEditor {
 
               // Enable English (Auto) at first of the second
               if (this.player && this.player.setCaptions) {
-                  this.player.setCaptions('en');
+                  this.player.setCaptions('original');
                   // Update UI menu
-                  document.querySelectorAll(".subtitle-option").forEach(b => b.classList.toggle('active', b.dataset.lang === 'en'));
+                  document.querySelectorAll(".subtitle-option").forEach(b => b.classList.toggle('active', b.dataset.lang === 'original'));
               }
 
               resolve();
@@ -355,70 +351,13 @@ class VideoEditor {
         const response = await fetch(url);
         const text = await response.text();
         this.currentSubtitles = this.parseVTT(text);
-        // Cache original English subtitles if they aren't already
-        if ((url === this.subtitlePath || url.includes('english.vtt')) && this.originalSubtitles.length === 0) {
-            this.originalSubtitles = JSON.parse(JSON.stringify(this.currentSubtitles));
-        }
         console.log(`Loaded ${this.currentSubtitles.length} subtitle cues`);
     } catch (e) {
         console.error("Failed to load VTT subtitles:", e);
     }
   }
 
-  async loadAutoTranslate(lang) {
-    if (this.isTranslating) return;
 
-    // Check if we already have original subtitles, if not load them first
-    if (this.originalSubtitles.length === 0) {
-        await this.loadVttSubtitles(this.subtitlePath);
-    }
-
-    if (this.originalSubtitles.length === 0) {
-        console.error("No source subtitles found to translate");
-        return;
-    }
-
-    console.log(`Auto-translating to: ${lang}`);
-    this.isTranslating = true;
-    this.loadingSpinner.classList.add('active');
-
-    try {
-        // Translate in chunks if necessary, but 2.5KB is small enough for one go.
-        // We use a separator that Google Translate usually preserves.
-        const separator = " [[|]] ";
-        const combinedText = this.originalSubtitles.map(c => c.text).join(separator);
-
-        const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=${lang}&dt=t&q=${encodeURIComponent(combinedText)}`;
-
-        const response = await fetch(url);
-        const data = await response.json();
-
-        // Google returns parts of the translated text in an array
-        let translatedText = "";
-        if (data && data[0]) {
-            translatedText = data[0].map(item => item[0]).join("");
-        }
-
-        if (!translatedText) throw new Error("Translation returned empty result");
-
-        const translatedParts = translatedText.split(separator.trim());
-
-        this.currentSubtitles = this.originalSubtitles.map((cue, index) => ({
-            ...cue,
-            text: translatedParts[index] ? translatedParts[index].trim() : cue.text
-        }));
-
-        this.subtitlesEnabled = true;
-        this.activeSubtitleIndex = -1; // Force re-render
-        console.log("Translation complete");
-    } catch (e) {
-        console.error("Translation failed:", e);
-        alert("Failed to auto-translate subtitles. Please try again.");
-    } finally {
-        this.isTranslating = false;
-        this.loadingSpinner.classList.remove('active');
-    }
-  }
 
   parseVTT(vttText) {
     const cues = [];
@@ -461,17 +400,45 @@ class VideoEditor {
     return seconds;
   }
 
-  renderSubtitles(currentTime) {
+  async renderSubtitles(currentTime) {
     const activeCue = this.currentSubtitles.find(cue => currentTime >= cue.start && currentTime <= cue.end);
 
     if (activeCue) {
         if (this.activeSubtitleIndex !== this.currentSubtitles.indexOf(activeCue)) {
             this.activeSubtitleIndex = this.currentSubtitles.indexOf(activeCue);
-            this.subtitleOverlay.innerHTML = `<div class="custom-subtitle-text">${activeCue.text.replace(/\n/g, '<br>')}</div>`;
+
+            let displayText = activeCue.text;
+
+            if (this.currentLang === 'en') {
+                displayText = await this.translateLive(activeCue.text, 'en');
+            }
+
+            this.subtitleOverlay.innerHTML = `<div class="custom-subtitle-text">${displayText.replace(/\n/g, '<br>')}</div>`;
         }
     } else {
         this.activeSubtitleIndex = -1;
         this.subtitleOverlay.innerHTML = '';
+    }
+  }
+
+  async translateLive(text, targetLang) {
+    if (this.translationCache[text]) return this.translationCache[text];
+
+    try {
+        const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=${targetLang}&dt=t&q=${encodeURIComponent(text)}`;
+        const response = await fetch(url);
+        const data = await response.json();
+
+        let translated = text;
+        if (data && data[0]) {
+            translated = data[0].map(item => item && item[0] ? item[0] : "").join("").trim();
+        }
+
+        this.translationCache[text] = translated;
+        return translated;
+    } catch (e) {
+        console.error("Live translation failed:", e);
+        return text; // Fallback to original
     }
   }
 

@@ -205,17 +205,10 @@
                                         </svg>
                                     </button>
                                     <div class="subtitle-menu" id="subtitleMenu">
-                                        <button class="subtitle-option" data-lang="off">Off</button>
-                                        <button class="subtitle-option active" data-lang="en">English
-                                            (Original)</button>
-                                        <div class="menu-divider"></div>
-                                        <div class="menu-header">Auto-Translate</div>
-                                        <button class="subtitle-option" data-lang="es">Spanish (Español)</button>
-                                        <button class="subtitle-option" data-lang="fr">French (Français)</button>
-                                        <button class="subtitle-option" data-lang="de">German (Deutsch)</button>
-                                        <button class="subtitle-option" data-lang="hi">Hindi (हिन्दी)</button>
-                                        <button class="subtitle-option" data-lang="ar">Arabic (العربية)</button>
-                                        <button class="subtitle-option" data-lang="ja">Japanese (日本語)</button>
+                                        <button class="subtitle-option active" data-lang="original"
+                                            id="optOriginal">Original text</button>
+                                        <button class="subtitle-option" data-lang="en"
+                                            id="optEnglish">English</button>
                                     </div>
                                 </div>
 
