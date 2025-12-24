@@ -26,7 +26,7 @@ class VideoController extends Controller
                 'youtube_url' => 'required|url',
                 'title' => 'required|string|max:255',
                 'thumbnail' => 'nullable|image|max:5000',
-                'timing' => 'required|integer|min:1',
+                // 'timing' => 'required|integer|min:1',
             ]);
 
             // Extract YouTube video ID from URL
@@ -47,13 +47,16 @@ class VideoController extends Controller
             // dd($videoId);
             // Generate Subtitle (.vtt)
             $subtitlePath = $this->generateYoutubeSubtitle($videoId);
-
+            $hours   = $request->input('hours', 0);
+            $minutes = $request->input('minutes', 0);
+            $seconds = $request->input('seconds', 0);
+            $videoDuration = ($hours * 3600) + ($minutes * 60) + $seconds;
             Video::create([
                 'title' => $request->title,
                 'video_path' => $youtubeUrl, // Store the YouTube URL directly
                 'is_youtube' => true,
                 'thumbnail_path' => $thumbnailPath,
-                'thumbnail_timing' => $request->timing,
+                'thumbnail_timing' => $videoDuration,
                 'subtitle_path' => $subtitlePath,
             ]);
 
@@ -65,7 +68,7 @@ class VideoController extends Controller
             'videos.*' => 'required|mimes:mp4,mov,avi,wmv|max:20000',
             'thumbnails.*' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:5000',
             'titles.*' => 'required|string|max:255',
-            'timings.*' => 'required|integer|min:1',
+            // 'timings.*' => 'required|integer|min:1',
         ]);
 
         if ($request->hasFile('videos')) {
@@ -76,13 +79,17 @@ class VideoController extends Controller
                 if ($request->hasFile("thumbnails") && isset($request->file("thumbnails")[$index])) {
                     $thumbnailPath = $request->file("thumbnails")[$index]->store('thumbnails', 'public');
                 }
+                $hours   = $request->input('hours', 0);
+                $minutes = $request->input('minutes', 0);
+                $seconds = $request->input('seconds', 0);
+                $videoDuration = ($hours * 3600) + ($minutes * 60) + $seconds;
 
                 Video::create([
                     'title' => $request->titles[$index],
                     'video_path' => $videoPath,
                     'is_youtube' => false,
                     'thumbnail_path' => $thumbnailPath,
-                    'thumbnail_timing' => $request->timings[$index] ?? 10,
+                    'thumbnail_timing' =>  $videoDuration ?? 10,
                 ]);
             }
         }

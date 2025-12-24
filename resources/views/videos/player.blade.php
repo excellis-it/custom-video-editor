@@ -31,6 +31,65 @@
             background: rgba(15, 23, 42, 0.9);
             transform: translateX(-5px);
         }
+
+        .toggle-button {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            user-select: none;
+        }
+
+        .toggle-label {
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        /* Switch container */
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 42px;
+            height: 22px;
+        }
+
+        /* Hide default checkbox */
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        /* Slider */
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            inset: 0;
+            background-color: #ccc;
+            transition: 0.3s;
+            border-radius: 22px;
+        }
+
+        /* Slider knob */
+        .slider::before {
+            content: "";
+            position: absolute;
+            height: 18px;
+            width: 18px;
+            left: 2px;
+            bottom: 2px;
+            background-color: #fff;
+            transition: 0.3s;
+            border-radius: 50%;
+        }
+
+        /* Checked state */
+        .switch input:checked+.slider {
+            background-color: #0d6efd;
+        }
+
+        .switch input:checked+.slider::before {
+            transform: translateX(20px);
+        }
     </style>
 </head>
 
@@ -73,7 +132,7 @@
                             data-video-id="{{ $videoId }}">
                             <!-- Subtitle-Safe Clipping: Hide Top Title (-15%), keep bottom clear -->
                             <div id="youtubePlayer"
-                                style="width: 100%; height: 120%; position: absolute; top: -15%; left: 0;">
+                                style="width: 112%; height: 120%; position: absolute; top: -15%; left: 0;">
                             </div>
                             <!-- Interaction layer captures clicks so YT iframe never sees the mouse -->
                             <div id="ytInteractionLayer"
@@ -165,6 +224,15 @@
                                             max="100" value="100">
                                     </div>
                                 </div>
+
+                                <div class="toggle-button">
+                                    <label class="switch">
+                                        <input type="checkbox" id="ccToggle">
+                                        <span class="slider"></span>
+                                    </label>
+                                    <span class="toggle-label">CC</span>
+                                </div>
+
                             </div>
 
                             <div class="controls-right">

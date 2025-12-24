@@ -318,8 +318,18 @@
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
                         <div style="font-size: 0.75rem; color: #94a3b8;">Custom Thumbnail (Optional):<input
                                 type="file" name="thumbnail" accept="image/*"></div>
-                        <input type="number" name="timing" placeholder="Thumbnail Timing (sec)" value="10"
-                            required>
+
+                        <div style="font-size: 0.75rem; color: #94a3b8;">Overlay Timing (Optional):
+                            <div
+                                style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 8px;">
+                                <input type="number" name="hours" placeholder="HH" min="0" max="23"
+                                    value="0">
+                                <input type="number" name="minutes" placeholder="MM" min="0" max="59"
+                                    value="0">
+                                <input type="number" name="seconds" placeholder="SS" min="0" max="59"
+                                    value="0">
+                            </div>
+                        </div>
                     </div>
                 </div>
                 <button type="submit" class="btn-submit" style="margin-top: 20px;">Add to Gallery</button>
@@ -358,7 +368,7 @@
                             <div class="video-info">
                                 <h3 class="video-title">{{ $video->title }}</h3>
                                 <div class="video-meta">
-                                    <span>Overlay Timing: {{ $video->thumbnail_timing }}s</span>
+                                    <span>Overlay Timing: {{ intdiv($video->thumbnail_timing, 3600) }}h {{ intdiv($video->thumbnail_timing % 3600, 60) }}m {{ $video->thumbnail_timing % 60 }}s</span>
                                 </div>
                             </div>
                         </article>
