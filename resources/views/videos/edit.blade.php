@@ -4,13 +4,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>Video Gallery & Upload - Premium Editor</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{{ asset('css/styles.css') }}">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.1/css/all.min.css" />
     <style>
         body {
             background: #0f172a;
@@ -279,50 +277,11 @@
             margin-top: 0px;
         }
 
-        .delete-btn {
-            position: absolute;
-            top: 8px;
-            right: 8px;
-            z-index: 10;
-            background: rgba(220, 38, 38, 0.9);
-            color: #fff;
-            width: 32px;
-            height: 32px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            text-decoration: none;
-        }
-
-        .edit-btn {
-            position: absolute;
-            top: 8px;
-            left: 8px;
-            z-index: 10;
-            background: rgba(37, 99, 235, 0.9);
-            color: #fff;
-            width: 32px;
-            height: 32px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            text-decoration: none;
-            font-size: 16px;
-        }
-
-        .reload-subtitle-btn {
-            background: #0ea5e9;
-            color: #fff;
-            border: none;
-            padding: 8px 14px;
+        .thumb-preview img {
+            width: 160px;
+            height: auto;
             border-radius: 8px;
-            cursor: pointer;
-            font-size: 0.85rem;
-            margin-left: 260px;
-            position: relative;
-            top: -20px;
+            border: 1px solid #334155;
         }
     </style>
 </head>
@@ -358,35 +317,48 @@
         </div> --}}
 
         <section class="upload-section" id="youtube-upload">
-            <h2 class="form-title">Add YouTube Video</h2>
+            <h2 class="form-title">Edit YouTube Video</h2>
             <p style="color: #94a3b8; margin-bottom: 20px; text-align: center;">Paste a YouTube link to add it to your
                 video gallery. The video will play directly from YouTube.</p>
-            <form action="{{ route('videos.store') }}" method="POST" enctype="multipart/form-data" id="youtubeForm"
-                onsubmit="showLoader()">
+            <form action="{{ route('videos.update', $video->id) }}" method="POST" enctype="multipart/form-data"
+                id="youtubeForm" onsubmit="showLoader()">
                 @csrf
                 <input type="hidden" name="is_youtube" value="1">
+                <input type="hidden" name="id" value="{{ $video->id }}">
+                {{-- @dd($video) --}}
                 <div class="video-item-form" style="grid-template-columns: 1fr;">
-                    <input type="text" name="youtube_url"
-                        placeholder="Paste YouTube Link (e.g., https://www.youtube.com/watch?v=...)" required>
-                    <input type="text" name="title" placeholder="Video Title" required>
+                    <input type="text" name="youtube_url" value="{{ $video->video_path }}"
+                        placeholder="Paste YouTube Link (e.g., https://www.youtube.com/watch?v=...)">
+                    <input type="text" name="title" placeholder="Video Title" value="{{ $video->title }}">
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
                         <div style="font-size: 0.75rem; color: #94a3b8;">Custom Thumbnail (Optional):<input
                                 type="file" name="thumbnail" accept="image/*"></div>
+                        @if ($video->thumbnail_path)
+                            <div class="thumb-preview">
+                                <img src="{{ asset('storage/' . $video->thumbnail_path) }}" alt="Current Thumbnail">
+                                <p style="font-size: 0.7rem; color: #64748b;">Current thumbnail</p>
+                            </div>
+                        @endif
 
                         <div style="font-size: 0.75rem; color: #94a3b8;">Overlay Timing (Optional):
                             <div
                                 style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 8px;">
+                                @php
+                                    $hours = floor($video->thumbnail_timing / 3600);
+                                    $minutes = floor(($video->thumbnail_timing % 3600) / 60);
+                                    $seconds = $video->thumbnail_timing % 60;
+                                @endphp
                                 <input type="number" name="hours" placeholder="HH" min="0" max="23"
-                                    value="0">
+                                    value="{{ $hours }}">
                                 <input type="number" name="minutes" placeholder="MM" min="0" max="59"
-                                    value="0">
+                                    value="{{ $minutes }}">
                                 <input type="number" name="seconds" placeholder="SS" min="0" max="59"
-                                    value="0">
+                                    value="{{ $seconds }}">
                             </div>
                         </div>
                     </div>
                 </div>
-                <button type="submit" class="btn-submit" style="margin-top: 20px;">Add to Gallery</button>
+                <button type="submit" class="btn-submit" style="margin-top: 20px;">Update to Gallery</button>
             </form>
         </section>
 
@@ -394,64 +366,11 @@
         <div id="processingLoader" class="loading-overlay" style="display: none;">
             <div class="loader-content">
                 <div class="premium-spinner"></div>
-                <h3>Saving Video Link...</h3>
-                <p>Adding your YouTube video to the gallery.</p>
+                <h3>Update Video Link...</h3>
+                <p>Updating your YouTube video in the gallery.</p>
             </div>
         </div>
 
-        <section class="gallery-section">
-            <h2 class="form-title">Your Video Gallery</h2>
-            <div class="gallery">
-                @forelse($videos as $video)
-                    <a href="{{ route('videos.show', $video->id) }}" style="text-decoration: none; color: inherit;">
-
-                        <article class="video-card">
-
-                            <div class="thumbnail-box">
-                                @if ($video->thumbnail_path)
-                                    <img src="{{ asset('storage/' . $video->thumbnail_path) }}"
-                                        alt="{{ $video->title }}">
-                                @else
-                                    <div
-                                        style="width: 100%; height: 100%; background: #1e293b; display: flex; align-items: center; justify-content: center;">
-                                        <span>No Thumbnail</span>
-                                    </div>
-                                @endif
-
-                                <button type="button" class="delete-btn"
-                                    data-route="{{ route('videos.destroy', $video->id) }}" title="Delete Video">
-                                    <i class="fa-regular fa-circle-xmark"></i>
-                                </button>
-                                <button type="button" data-route="{{ route('videos.edit', $video->id) }}"
-                                    class="edit-btn" title="Edit Video">
-                                    <i class="fa-solid fa-pen-to-square"></i>
-                                </button>
-                                <div class="play-overlay">
-                                    <div class="play-icon-mini">▶</div>
-                                </div>
-                            </div>
-                            <div class="video-info">
-                                <h3 class="video-title">{{ $video->title }}</h3>
-                                <div class="video-meta">
-                                    <span>Overlay Timing: {{ intdiv($video->thumbnail_timing, 3600) }}h
-                                        {{ intdiv($video->thumbnail_timing % 3600, 60) }}m
-                                        {{ $video->thumbnail_timing % 60 }}s</span>
-                                </div>
-                                @if ($video->is_youtube && empty($video->subtitle_path))
-                                    <button type="button" class="reload-subtitle-btn"
-                                        data-route="{{ route('videos.reloadSubtitle', $video->id) }}" title="Reload Subtitle">
-                                        <i class="fa-solid fa-arrow-rotate-right"></i>
-                                    </button>
-                                @endif
-                            </div>
-                        </article>
-                    </a>
-                @empty
-                    <p style="grid-column: 1/-1; text-align: center; color: #94a3b8; padding: 40px;">No videos
-                        downloaded yet.</p>
-                @endforelse
-            </div>
-        </section>
     </div>
 
     <script>
@@ -459,16 +378,7 @@
             document.getElementById('processingLoader').style.display = 'flex';
         }
     </script>
-    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>>
-    <script src="{{ asset('js/videocrud.js') }}"></script>
-    <script>
-        $.ajaxSetup({
-            headers: {
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-            }
-        });
-    </script>
+
 </body>
 
 </html>

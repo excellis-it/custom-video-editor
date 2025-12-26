@@ -219,4 +219,113 @@ class VideoController extends Controller
 
         return null;
     }
+    public function edit($id)
+    {
+        $video = Video::findOrFail($id);
+        return view('videos.edit', compact('video'));
+    }
+
+    public function update(Request $request, $id)
+    {
+        $video = Video::findOrFail($id);
+
+        $request->validate([
+            'title' => 'required|string|max:255',
+            'youtube_url' => 'nullable|url',
+            'thumbnail' => 'nullable|image|max:5000',
+            'hours' => 'nullable|integer|min:0',
+            'minutes' => 'nullable|integer|min:0',
+            'seconds' => 'nullable|integer|min:0',
+        ]);
+
+        $video->title = $request->input('title');
+
+        if ($request->has('youtube_url')) {
+            $video->video_path = $request->input('youtube_url');
+            $video->is_youtube = true;
+        }
+
+        if ($request->hasFile('thumbnail')) {
+            // Delete old thumbnail if exists
+            if ($video->thumbnail_path && Storage::disk('public')->exists($video->thumbnail_path)) {
+                Storage::disk('public')->delete($video->thumbnail_path);
+            }
+            $video->thumbnail_path = $request->file('thumbnail')->store('thumbnails', 'public');
+        }
+
+        $hours   = $request->input('hours', 0);
+        $minutes = $request->input('minutes', 0);
+        $seconds = $request->input('seconds', 0);
+        $videoDuration = ($hours * 3600) + ($minutes * 60) + $seconds;
+        $video->thumbnail_timing = $videoDuration;
+
+        $video->save();
+
+        return redirect()->route('videos.index')->with('success', 'Video updated successfully!');
+    }
+
+    public function delete($id)
+    {
+        $video = Video::findOrFail($id);
+
+        // Delete thumbnail file
+        if ($video->thumbnail_path && Storage::disk('public')->exists($video->thumbnail_path)) {
+            Storage::disk('public')->delete($video->thumbnail_path);
+        }
+
+        // Delete video file (if exists)
+        if ($video->video_path && Storage::disk('public')->exists($video->video_path)) {
+            Storage::disk('public')->delete($video->video_path);
+        }
+
+        $video->delete();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Video deleted successfully'
+        ]);
+    }
+    public function reloadSubtitle(Video $video)
+    {
+        if (!$video->is_youtube) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Transcript reload is only for YouTube videos'
+            ], 400);
+        }
+
+        // Extract video ID again
+        if (!preg_match(
+            '/(?:youtube\.com\/(?:.*v=)|youtu\.be\/)([^"&?\/ ]{11})/',
+            $video->video_path,
+            $matches
+        )) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid YouTube URL'
+            ], 400);
+        }
+
+        $videoId = $matches[1];
+
+        // Try to regenerate
+        $subtitlePath = $this->generateYoutubeSubtitle($videoId);
+
+        if (!$subtitlePath || !Storage::disk('public')->exists($subtitlePath)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Transcript still not available. Try again later.'
+            ]);
+        }
+
+        // Update DB
+        $video->update([
+            'subtitle_path' => $subtitlePath
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Transcript successfully loaded!'
+        ]);
+    }
 }
